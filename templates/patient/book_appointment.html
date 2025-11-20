@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Book Appointment{% endblock %}
+
+{% block content %}
+<h3 class="mb-3">Book Appointment</h3>
+
+<div class="card shadow-sm mb-3">
+  <div class="card-body">
+    <h5 class="card-title mb-1">{{ doctor.name }}</h5>
+    <p class="mb-1">
+      <strong>Specialization:</strong> {{ doctor.specialization or '-' }}
+    </p>
+    <p class="mb-1">
+      <strong>Department:</strong> {{ doctor.department_id or '-' }}
+      <!-- you can improve this later to show department name if you join it -->
+    </p>
+    <p class="mb-0 text-muted">
+      Please choose a date &amp; time that matches an available slot.
+    </p>
+  </div>
+</div>
+
+<form method="post" class="card shadow-sm">
+  <div class="card-body">
+    <div class="mb-3">
+      <label for="date" class="form-label">Date</label>
+      <input
+        type="date"
+        class="form-control"
+        id="date"
+        name="date"
+        required
+      >
+    </div>
+    <div class="mb-3">
+      <label for="time" class="form-label">Time</label>
+      <input
+        type="time"
+        class="form-control"
+        id="time"
+        name="time"
+        required
+      >
+    </div>
+    <button type="submit" class="btn btn-primary">Book Appointment</button>
+    <a href="{{ url_for('patient_doctor_availability', doctor_id=doctor.id) }}"
+       class="btn btn-outline-secondary">
+      Back
+    </a>
+  </div>
+</form>
+{% endblock %}

@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}Doctor Availability{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="mb-0">
+    {% if doctor %}
+      Dr. {{ doctor.name }} – Availability
+    {% else %}
+      Doctor Availability
+    {% endif %}
+  </h2>
+  <a href="{{ url_for('patient_doctors') }}" class="btn btn-outline-secondary btn-sm">
+    ← Back to Doctors
+  </a>
+</div>
+
+<div class="row g-3">
+  <!-- Doctor info -->
+  <div class="col-lg-4">
+    <div class="card shadow-sm mb-3">
+      <div class="card-body">
+        {% if doctor %}
+          <h5 class="card-title mb-1">Dr. {{ doctor.name }}</h5>
+          <p class="mb-1">
+            <strong>Specialization:</strong>
+            {{ doctor.specialization or '-' }}
+          </p>
+          <p class="mb-1">
+            <strong>Department:</strong>
+            {{ doctor.department_name or '-' }}
+          </p>
+          <p class="mb-1">
+            <strong>Phone:</strong>
+            {{ doctor.phone or '-' }}
+          </p>
+          <p class="mb-0">
+            <strong>Bio:</strong><br>
+            {{ doctor.bio or 'No bio provided.' }}
+          </p>
+        {% else %}
+          <p class="mb-0 text-muted">Doctor information not available.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="alert alert-info small">
+      <strong>Note:</strong> You can book appointments only for the next 7 days.
+      Slots shown below are based on the doctor’s availability and existing bookings.
+    </div>
+  </div>
+
+  <!-- Availability + booking -->
+  <div class="col-lg-8">
+    <div class="card shadow-sm mb-3">
+      <div class="card-body">
+        <h5 class="card-title">Available Slots (Next 7 days)</h5>
+
+        {% if slots %}
+          <div class="table-responsive">
+            <table class="table table-sm align-middle">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Time</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for s in slots %}
+                  <tr>
+                    <td>{{ s.date }}</td>
+                    <td>{{ s.time }}</td>
+                    <td>
+                      <form method="post" action="{{ url_for('patient_book_appointment') }}">
+                        <input type="hidden" name="doctor_id" value="{{ doctor.id }}">
+                        <input type="hidden" name="date" value="{{ s.date }}">
+                        <input type="hidden" name="time" value="{{ s.time }}">
+                        <button type="submit" class="btn btn-sm btn-primary">
+                          Book
+                        </button>
+                      </form>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="mt-3 mb-0 text-muted">
+            No available slots for the next 7 days.
+          </p>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if appointments %}
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title">Your Appointments with this Doctor</h5>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Time</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for a in appointments %}
+                  <tr>
+                    <td>{{ a.date }}</td>
+                    <td>{{ a.time }}</td>
+                    <td>{{ a.status }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

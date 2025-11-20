@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Reschedule Appointment{% endblock %}
+
+{% block content %}
+<h3 class="mb-3">Reschedule Appointment</h3>
+
+<div class="card shadow-sm mb-3">
+  <div class="card-body">
+    <p class="mb-1"><strong>Doctor:</strong> {{ appointment.doctor_name }}</p>
+    <p class="mb-1"><strong>Current date:</strong> {{ appointment.date }}</p>
+    <p class="mb-1"><strong>Current time:</strong> {{ appointment.time }}</p>
+    <p class="text-muted mb-0">
+      Choose a new date and time that matches the doctor's availability.
+    </p>
+  </div>
+</div>
+
+<form method="post" class="card shadow-sm">
+  <div class="card-body">
+    <div class="mb-3">
+      <label for="date" class="form-label">New date</label>
+      <input
+        type="date"
+        id="date"
+        name="date"
+        class="form-control"
+        required
+      >
+    </div>
+    <div class="mb-3">
+      <label for="time" class="form-label">New time</label>
+      <input
+        type="time"
+        id="time"
+        name="time"
+        class="form-control"
+        required
+      >
+    </div>
+    <button type="submit" class="btn btn-primary">Reschedule</button>
+    <a href="{{ url_for('patient_appointments') }}" class="btn btn-outline-secondary">
+      Cancel
+    </a>
+  </div>
+</form>
+{% endblock %}

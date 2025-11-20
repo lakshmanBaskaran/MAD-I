@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile{% endblock %}
+
+{% block content %}
+<h3 class="mb-3">My Profile</h3>
+
+<form method="post" class="card shadow-sm">
+  <div class="card-body">
+    <div class="mb-3">
+      <label for="name" class="form-label">Full name</label>
+      <input
+        type="text"
+        id="name"
+        name="name"
+        class="form-control"
+        value="{{ patient.name or '' }}"
+        required
+      >
+    </div>
+
+    <div class="mb-3">
+      <label for="email" class="form-label">Email</label>
+      <input
+        type="email"
+        id="email"
+        name="email"
+        class="form-control"
+        value="{{ email or '' }}"
+        required
+      >
+    </div>
+
+    <div class="mb-3">
+      <label for="age" class="form-label">Age</label>
+      <input
+        type="number"
+        id="age"
+        name="age"
+        class="form-control"
+        value="{{ patient.age or '' }}"
+      >
+    </div>
+
+    <div class="mb-3">
+      <label for="gender" class="form-label">Gender</label>
+      <input
+        type="text"
+        id="gender"
+        name="gender"
+        class="form-control"
+        value="{{ patient.gender or '' }}"
+      >
+    </div>
+
+    <div class="mb-3">
+      <label for="phone" class="form-label">Phone</label>
+      <input
+        type="text"
+        id="phone"
+        name="phone"
+        class="form-control"
+        value="{{ patient.phone or '' }}"
+      >
+    </div>
+
+    <div class="mb-3">
+      <label for="address" class="form-label">Address</label>
+      <textarea
+        id="address"
+        name="address"
+        class="form-control"
+        rows="2"
+      >{{ patient.address or '' }}</textarea>
+    </div>
+
+    <div class="mb-3">
+      <label for="emergency_contact" class="form-label">Emergency contact</label>
+      <textarea
+        id="emergency_contact"
+        name="emergency_contact"
+        class="form-control"
+        rows="2"
+      >{{ patient.emergency_contact or '' }}</textarea>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save</button>
+    <a href="{{ url_for('patient_dashboard') }}" class="btn btn-outline-secondary">
+      Back to Dashboard
+    </a>
+  </div>
+</form>
+{% endblock %}

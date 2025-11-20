@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block title %}Doctor Dashboard{% endblock %}
+
+{% block content %}
+<h2 class="mb-3">Doctor Dashboard</h2>
+<p class="text-muted">Welcome, Dr. {{ doctor.name }}</p>
+
+<div class="row g-3">
+
+  <!-- Left: Upcoming appointments + inline update -->
+  <div class="col-lg-7">
+    <div class="card shadow-sm mb-3">
+      <div class="card-body">
+        <h5 class="card-title">Upcoming Appointments (Next 7 days)</h5>
+
+        {% if upcoming_appts %}
+          <p class="small text-muted mb-2">
+            You can update status and enter diagnosis/prescription directly from here.
+          </p>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Time</th>
+                  <th>Patient</th>
+                  <th>Status</th>
+                  <th>Diagnosis</th>
+                  <th>Prescription</th>
+                  <th>Notes</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for a in upcoming_appts %}
+                  <tr>
+                    <form method="post">
+                      <input type="hidden" name="action" value="update_appointment">
+                      <input type="hidden" name="appointment_id" value="{{ a.id }}">
+                      <td>{{ a.date }}</td>
+                      <td>{{ a.time }}</td>
+                      <td>{{ a.patient_name }}</td>
+                      <td style="min-width: 120px;">
+                        <select name="status" class="form-select form-select-sm">
+                          <option value="Booked" {% if a.status == 'Booked' %}selected{% endif %}>Booked</option>
+                          <option value="Completed" {% if a.status == 'Completed' %}selected{% endif %}>Completed</option>
+                          <option value="Cancelled" {% if a.status == 'Cancelled' %}selected{% endif %}>Cancelled</option>
+                        </select>
+                      </td>
+                      <td style="min-width: 160px;">
+                        <textarea name="diagnosis" class="form-control form-control-sm" rows="2">{{ a.diagnosis or '' }}</textarea>
+                      </td>
+                      <td style="min-width: 160px;">
+                        <textarea name="prescription" class="form-control form-control-sm" rows="2">{{ a.prescription or '' }}</textarea>
+                      </td>
+                      <td style="min-width: 160px;">
+                        <textarea name="notes" class="form-control form-control-sm" rows="2">{{ a.notes or '' }}</textarea>
+                      </td>
+                      <td>
+                        <button type="submit" class="btn btn-sm btn-primary">
+                          Save
+                        </button>
+                      </td>
+                    </form>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="mt-3 mb-0 text-muted">No upcoming appointments.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: availability + patient history -->
+  <div class="col-lg-5">
+
+    <!-- Availability -->
+    <div class="card shadow-sm mb-3">
+      <div class="card-body">
+        <h5 class="card-title">My Availability (Next 7 days)</h5>
+
+        <form method="post" class="row g-2 mb-3">
+          <input type="hidden" name="action" value="add_slot">
+          <div class="col-md-6">
+            <label class="form-label">Date</label>
+            <input type="date" name="date" class="form-control" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Time</label>
+            <input type="time" name="time" class="form-control" required>
+          </div>
+          <div class="col-12 mt-2">
+            <button type="submit" class="btn btn-primary btn-sm">Add Slot</button>
+          </div>
+        </form>
+
+        {% if slots %}
+          <div class="table-responsive">
+            <table class="table table-sm align-middle">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Time</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for s in slots %}
+                  <tr>
+                    <td>{{ s.date }}</td>
+                    <td>{{ s.time }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="mt-2 mb-0 text-muted">No slots configured for the next 7 days.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Assigned Patients + Patient history viewer -->
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">Patient History</h5>
+
+        <!-- Quick list of assigned patients -->
+        {% if patients %}
+          <p class="small text-muted mb-1">Assigned patients:</p>
+          <ul class="list-group list-group-flush mb-3">
+            {% for p in patients %}
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                {{ p.name }}
+                <a href="{{ url_for('doctor_dashboard', patient_id=p.id) }}"
+                   class="btn btn-sm btn-outline-secondary">
+                  View History
+                </a>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="mt-2 mb-3 text-muted">No patients assigned yet.</p>
+        {% endif %}
+
+        <!-- Selected patient details + history -->
+        {% if selected_patient %}
+          <div class="mb-2">
+            <p class="mb-1"><strong>Name:</strong> {{ selected_patient.name }}</p>
+            <p class="mb-1"><strong>Age:</strong> {{ selected_patient.age or '-' }}</p>
+            <p class="mb-1"><strong>Gender:</strong> {{ selected_patient.gender or '-' }}</p>
+            <p class="mb-1"><strong>Phone:</strong> {{ selected_patient.phone or '-' }}</p>
+            <p class="mb-0"><strong>Address:</strong> {{ selected_patient.address or '-' }}</p>
+          </div>
+
+          {% if history %}
+            <div class="table-responsive">
+              <table class="table table-sm align-middle">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Doctor</th>
+                    <th>Diagnosis</th>
+                    <th>Prescription</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for h in history %}
+                    <tr>
+                      <td>{{ h.date }}</td>
+                      <td>{{ h.time }}</td>
+                      <td>{{ h.doctor_name }}</td>
+                      <td>{{ h.diagnosis or '-' }}</td>
+                      <td>{{ h.prescription or '-' }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <p class="mt-2 mb-0 text-muted">
+              No completed appointments found for this patient.
+            </p>
+          {% endif %}
+        {% else %}
+          <p class="mt-2 mb-0 text-muted">Select a patient from the list above to view history.</p>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

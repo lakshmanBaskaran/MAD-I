@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Find Doctors{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3>Find Doctors</h3>
+</div>
+
+<form class="row g-2 mb-3" method="get">
+  <div class="col-md-6">
+    <input
+      type="text"
+      class="form-control"
+      name="q"
+      placeholder="Search by doctor name, specialization, or department"
+      value="{{ q or '' }}"
+    >
+  </div>
+  <div class="col-md-2">
+    <button class="btn btn-outline-primary w-100" type="submit">Search</button>
+  </div>
+</form>
+
+{% if doctors %}
+<table class="table table-striped table-hover table-sm align-middle">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Specialization</th>
+      <th>Department</th>
+      <th>Phone</th>
+      <th style="width: 180px;">Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for d in doctors %}
+      <tr>
+        <td>{{ d.name }}</td>
+        <td>{{ d.specialization or '-' }}</td>
+        <td>{{ d.department_name or '-' }}</td>
+        <td>{{ d.phone or '-' }}</td>
+        <td>
+          <a href="{{ url_for('patient_doctor_availability', doctor_id=d.id) }}"
+             class="btn btn-sm btn-outline-secondary mb-1">
+            View Availability
+          </a>
+          <a href="{{ url_for('book_appointment', doctor_id=d.id) }}"
+             class="btn btn-sm btn-primary mb-1">
+            Book
+          </a>
+        </td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+  <p>No doctors found. Try a different search or contact the hospital.</p>
+{% endif %}
+{% endblock %}

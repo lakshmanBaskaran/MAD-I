@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Doctors - Admin{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3>Doctors</h3>
+  <a href="{{ url_for('admin_add_doctor') }}" class="btn btn-success btn-sm">Add Doctor</a>
+</div>
+
+<form class="row g-2 mb-3" method="get">
+  <div class="col-md-4">
+    <input type="text" class="form-control" name="q" placeholder="Search by name, specialization, department"
+           value="{{ q or '' }}">
+  </div>
+  <div class="col-md-2">
+    <button class="btn btn-outline-primary w-100" type="submit">Search</button>
+  </div>
+</form>
+
+{% if doctors %}
+<table class="table table-striped table-hover table-sm align-middle">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Specialization</th>
+      <th>Department</th>
+      <th>Email</th>
+      <th>Status</th>
+      <th style="width: 140px;">Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for d in doctors %}
+      <tr>
+        <td>{{ d.name }}</td>
+        <td>{{ d.specialization or '-' }}</td>
+        <td>{{ d.department_name or '-' }}</td>
+        <td>{{ d.email }}</td>
+        <td>{{ d.status }}</td>
+        <td>
+          <a href="{{ url_for('admin_edit_doctor', doctor_id=d.id) }}"
+             class="btn btn-sm btn-outline-primary">Edit</a>
+
+          <form method="post" action="{{ url_for('admin_toggle_user_status', user_id=d.user_id) }}"
+                style="display:inline-block">
+            <button type="submit" class="btn btn-sm btn-outline-danger">
+              {% if d.status == 'active' %}Blacklist{% else %}Activate{% endif %}
+            </button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+  <p>No doctors found.</p>
+{% endif %}
+{% endblock %}
