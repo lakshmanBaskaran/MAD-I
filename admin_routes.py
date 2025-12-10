@@ -1,4 +1,3 @@
-# admin_routes.py
 from flask import render_template, request, redirect, url_for, flash
 
 from db import get_db
@@ -6,17 +5,12 @@ from security import role_required
 
 
 def init_admin_routes(app):
-
-    # ============================
-    # SINGLE-PAGE ADMIN DASHBOARD
-    # ============================
     @app.route("/admin/dashboard")
     @role_required("admin")
     def admin_dashboard():
         conn = get_db()
         cur = conn.cursor()
 
-        # --- Stats ---
         cur.execute("SELECT COUNT(*) AS c FROM doctor_profiles")
         doctor_count = cur.fetchone()["c"]
 
@@ -26,12 +20,10 @@ def init_admin_routes(app):
         cur.execute("SELECT COUNT(*) AS c FROM appointments")
         appointment_count = cur.fetchone()["c"]
 
-        # --- Filters from query string ---
         doc_q = request.args.get("doc_q", "").strip()
         pat_q = request.args.get("pat_q", "").strip()
         appt_status = request.args.get("status", "").strip()
 
-        # --- Doctors list (with search) ---
         if doc_q:
             like = f"%{doc_q}%"
             cur.execute(
@@ -75,7 +67,6 @@ def init_admin_routes(app):
             )
         doctors = cur.fetchall()
 
-        # --- Patients list (with search) ---
         if pat_q:
             like = f"%{pat_q}%"
             try:
@@ -122,7 +113,6 @@ def init_admin_routes(app):
             )
         patients = cur.fetchall()
 
-        # --- Appointments list (optional status filter) ---
         if appt_status:
             cur.execute(
                 """
@@ -174,14 +164,9 @@ def init_admin_routes(app):
             status=appt_status,
         )
 
-    # ============================
-    # DOCTOR MANAGEMENT
-    # ============================
-
     @app.route("/admin/doctors")
     @role_required("admin")
     def admin_doctors():
-        """Optional separate doctors list page (dashboard already shows them)."""
         q = request.args.get("q", "").strip()
         conn = get_db()
         cur = conn.cursor()
@@ -298,7 +283,6 @@ def init_admin_routes(app):
                 conn.close()
                 return redirect(url_for("admin_edit_doctor", doctor_id=doctor_id))
 
-            # Update user
             if new_password:
                 password_hash = generate_password_hash(new_password)
                 cur.execute(
@@ -332,14 +316,9 @@ def init_admin_routes(app):
             doctor=doctor,
         )
 
-    # ============================
-    # PATIENT MANAGEMENT
-    # ============================
-
     @app.route("/admin/patients")
     @role_required("admin")
     def admin_patients():
-        """Optional separate patients list page (dashboard already shows them)."""
         q = request.args.get("q", "").strip()
         conn = get_db()
         cur = conn.cursor()
@@ -421,14 +400,9 @@ def init_admin_routes(app):
         conn.close()
         return render_template("admin/patient_form.html", patient=patient)
 
-    # ============================
-    # USER STATUS (BLACKLIST)
-    # ============================
-
     @app.route("/admin/users/<int:user_id>/toggle_status", methods=["POST"])
     @role_required("admin")
     def admin_toggle_user_status(user_id):
-        """Blacklist/un-blacklist a user (doctor or patient)."""
         from flask import request as _req
 
         conn = get_db()
@@ -447,14 +421,9 @@ def init_admin_routes(app):
         flash(f"User status updated to {new_status}.", "success")
         return redirect(_req.referrer or url_for("admin_dashboard"))
 
-    # ============================
-    # APPOINTMENTS OVERVIEW
-    # ============================
-
     @app.route("/admin/appointments")
     @role_required("admin")
     def admin_appointments():
-        """Optional separate appointments page (dashboard already shows them)."""
         status = request.args.get("status", "").strip()
         conn = get_db()
         cur = conn.cursor()

@@ -12,27 +12,14 @@ from admin_routes import init_admin_routes
 from doctor_routes import init_doctor_routes
 from patient_routes import init_patient_routes
 
-# ------------------------------------------------
-# App & DB setup
-# ------------------------------------------------
-
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "change-this-secret-key"
-
-# Initialize database (create tables + default admin)
 init_db()
-
-# ------------------------------------------------
-# Flask-Login setup + User model
-# ------------------------------------------------
-
 login_manager = LoginManager(app)
 login_manager.login_view = "login"
 
 
 class UserMixinWrapper:
-    """Minimal wrapper to avoid importing UserMixin separately."""
-
     def __init__(self):
         self.is_authenticated = True
         self.is_active = True
@@ -43,8 +30,6 @@ class UserMixinWrapper:
 
 
 class User(UserMixinWrapper):
-    """Wraps a row from the users table for Flask-Login."""
-
     def __init__(self, row):
         super().__init__()
         self.id = row["id"]
@@ -65,9 +50,6 @@ def load_user(user_id):
     return None
 
 
-# ------------------------------------------------
-# Index route (role-based redirect)
-# ------------------------------------------------
 
 @app.route("/")
 def index():
@@ -81,9 +63,8 @@ def index():
     return redirect(url_for("login"))
 
 
-# ------------------------------------------------
-# Auth routes (login / logout / register)
-# ------------------------------------------------
+# Auth routes 
+
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -118,7 +99,7 @@ def logout():
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
-    """Patient registration."""
+
     if request.method == "POST":
         email = request.form.get("email", "").strip()
         password = request.form.get("password", "")
@@ -159,9 +140,6 @@ def register():
     return render_template("register.html")
 
 
-# ------------------------------------------------
-# Register other route groups
-# ------------------------------------------------
 
 init_admin_routes(app)
 init_doctor_routes(app)

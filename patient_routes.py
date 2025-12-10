@@ -1,4 +1,5 @@
 from datetime import date, datetime, timedelta
+import sqlite3
 
 from flask import render_template, request, redirect, url_for, flash
 
@@ -11,10 +12,6 @@ from security import (
 
 
 def init_patient_routes(app):
-
-    # ==========================
-    # DASHBOARD
-    # ==========================
     @app.route("/patient/dashboard")
     @role_required("patient")
     def patient_dashboard():
@@ -28,11 +25,9 @@ def init_patient_routes(app):
         conn = get_db()
         cur = conn.cursor()
 
-        # All departments (for display / filtering if needed)
         cur.execute("SELECT * FROM departments ORDER BY name")
         departments = cur.fetchall()
 
-        # Upcoming appointments
         cur.execute(
             """
             SELECT a.*, d.name AS doctor_name
@@ -45,7 +40,6 @@ def init_patient_routes(app):
         )
         upcoming = cur.fetchall()
 
-        # Past appointments + treatments
         cur.execute(
             """
             SELECT a.*, d.name AS doctor_name, t.diagnosis, t.prescription
@@ -68,9 +62,6 @@ def init_patient_routes(app):
             past=past,
         )
 
-    # ==========================
-    # PROFILE
-    # ==========================
     @app.route("/patient/profile", methods=["GET", "POST"])
     @role_required("patient")
     def patient_profile():
@@ -116,9 +107,6 @@ def init_patient_routes(app):
         patient = get_patient_profile_for_current_user()
         return render_template("patient/profile.html", patient=patient, email=email)
 
-    # ==========================
-    # DOCTORS LIST + SEARCH
-    # ==========================
     @app.route("/patient/doctors")
     @role_required("patient")
     def patient_doctors():
@@ -144,9 +132,6 @@ def init_patient_routes(app):
         conn.close()
         return render_template("patient/doctors_list.html", doctors=doctors, q=q)
 
-    # ==========================
-    # DOCTOR AVAILABILITY (NEXT 7 DAYS)
-    # ==========================
     @app.route("/patient/doctors/<int:doctor_id>/availability")
     @role_required("patient")
     def patient_doctor_availability(doctor_id):
@@ -154,7 +139,6 @@ def init_patient_routes(app):
         conn = get_db()
         cur = conn.cursor()
 
-        # Doctor + department info
         cur.execute(
             """
             SELECT d.*, dept.name AS department_name
@@ -173,11 +157,6 @@ def init_patient_routes(app):
         today_str = date.today().isoformat()
         next_week_str = (date.today() + timedelta(days=7)).isoformat()
 
-        # Only slots that:
-        #  - exist in doctor_availability
-        #  - are marked as is_available = 1
-        #  - are within [today, today+7 days]
-        #  - have NO booked appointment at that doctor/date/time
         cur.execute(
             """
             SELECT da.date, da.time
@@ -198,7 +177,6 @@ def init_patient_routes(app):
         )
         slots = cur.fetchall()
 
-        # Current patient's existing appointments with this doctor (for display)
         patient = get_patient_profile_for_current_user()
         appointments = []
         if patient:
@@ -221,9 +199,6 @@ def init_patient_routes(app):
             appointments=appointments,
         )
 
-    # ==========================
-    # BOOK FROM AVAILABILITY PAGE (POST ONLY)
-    # ==========================
     @app.route("/patient/book", methods=["POST"])
     @role_required("patient")
     def patient_book_appointment():
@@ -250,10 +225,6 @@ def init_patient_routes(app):
         conn = get_db()
         cur = conn.cursor()
 
-        # 1) Verify that the requested slot is actually available:
-        #    - Exists in doctor_availability
-        #    - is_available = 1
-        #    - No existing Booked appointment for that doctor/date/time
         cur.execute(
             """
             SELECT da.id
@@ -277,27 +248,53 @@ def init_patient_routes(app):
             flash("Selected slot is no longer available. Please choose another.", "warning")
             return redirect(url_for("patient_doctor_availability", doctor_id=doctor_id))
 
-        # 2) Insert the appointment (UNIQUE(doctor_id, date, time) in schema still protects us)
         created_at = datetime.now().isoformat(timespec="seconds")
 
         cur.execute(
             """
-            INSERT INTO appointments (patient_id, doctor_id, department_id, date, time, status, created_at)
-            VALUES (
-                ?, ?,
-                (SELECT department_id FROM doctor_profiles WHERE id = ?),
-                ?, ?, 'Booked', ?
-            )
+            SELECT id FROM appointments
+            WHERE doctor_id = ? AND date = ? AND time = ?
             """,
-            (
-                patient["id"],
-                doctor_id,
-                doctor_id,
-                date_str,
-                time_str,
-                created_at,
-            ),
+            (doctor_id, date_str, time_str),
         )
+        existing_appt = cur.fetchone()
+
+        if existing_appt:
+            cur.execute(
+                """
+                UPDATE appointments
+                SET patient_id = ?,
+                    department_id = (SELECT department_id FROM doctor_profiles WHERE id = ?),
+                    status = 'Booked',
+                    created_at = ?
+                WHERE id = ?
+                """,
+                (
+                    patient["id"],
+                    doctor_id,
+                    created_at,
+                    existing_appt["id"],
+                ),
+            )
+        else:
+            cur.execute(
+                """
+                INSERT INTO appointments (patient_id, doctor_id, department_id, date, time, status, created_at)
+                VALUES (
+                    ?, ?,
+                    (SELECT department_id FROM doctor_profiles WHERE id = ?),
+                    ?, ?, 'Booked', ?
+                )
+                """,
+                (
+                    patient["id"],
+                    doctor_id,
+                    doctor_id,
+                    date_str,
+                    time_str,
+                    created_at,
+                ),
+            )
 
         conn.commit()
         conn.close()
@@ -305,9 +302,6 @@ def init_patient_routes(app):
         flash("Appointment booked successfully.", "success")
         return redirect(url_for("patient_dashboard"))
 
-    # ==========================
-    # OLD BOOK APPOINTMENT PAGE (OPTIONAL, STILL KEPT)
-    # ==========================
     @app.route("/patient/appointments/book/<int:doctor_id>", methods=["GET", "POST"])
     @role_required("patient")
     def book_appointment(doctor_id):
@@ -335,7 +329,6 @@ def init_patient_routes(app):
                 conn.close()
                 return redirect(url_for("book_appointment", doctor_id=doctor_id))
 
-            # Check that slot is in availability
             cur.execute(
                 """
                 SELECT id FROM doctor_availability
@@ -348,7 +341,6 @@ def init_patient_routes(app):
                 conn.close()
                 return redirect(url_for("book_appointment", doctor_id=doctor_id))
 
-            # Check for double booking (same doctor/date/time)
             cur.execute(
                 """
                 SELECT id FROM appointments
@@ -377,9 +369,6 @@ def init_patient_routes(app):
         conn.close()
         return render_template("patient/book_appointment.html", doctor=doctor)
 
-    # ==========================
-    # VIEW ALL APPOINTMENTS
-    # ==========================
     @app.route("/patient/appointments")
     @role_required("patient")
     def patient_appointments():
@@ -404,9 +393,6 @@ def init_patient_routes(app):
         conn.close()
         return render_template("patient/appointments.html", appointments=appointments)
 
-    # ==========================
-    # CANCEL APPOINTMENT
-    # ==========================
     @app.route("/patient/appointments/<int:appointment_id>/cancel", methods=["POST"])
     @role_required("patient")
     def cancel_appointment(appointment_id):
@@ -443,9 +429,6 @@ def init_patient_routes(app):
         conn.close()
         return redirect(url_for("patient_appointments"))
 
-    # ==========================
-    # RESCHEDULE APPOINTMENT
-    # ==========================
     @app.route("/patient/appointments/<int:appointment_id>/reschedule", methods=["GET", "POST"])
     @role_required("patient")
     def reschedule_appointment(appointment_id):
@@ -480,7 +463,6 @@ def init_patient_routes(app):
                 conn.close()
                 return redirect(url_for("reschedule_appointment", appointment_id=appointment_id))
 
-            # Check availability table
             cur.execute(
                 """
                 SELECT id FROM doctor_availability
@@ -493,7 +475,6 @@ def init_patient_routes(app):
                 conn.close()
                 return redirect(url_for("reschedule_appointment", appointment_id=appointment_id))
 
-            # Check double booking (another appointment)
             cur.execute(
                 """
                 SELECT id FROM appointments

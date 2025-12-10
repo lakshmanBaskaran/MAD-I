@@ -1,3 +1,4 @@
+# db.py
 import sqlite3
 from pathlib import Path
 
@@ -8,9 +9,23 @@ SCHEMA_FILE = "schema.sql"
 
 
 def get_db():
-    conn = sqlite3.connect(DB_PATH)
+    """
+    Return a new SQLite connection with sane defaults for a Flask app:
+    - Longer timeout so short concurrent writes don't immediately fail.
+    - WAL journal mode for better concurrency.
+    - Foreign keys enforced.
+    """
+    conn = sqlite3.connect(
+        DB_PATH,
+        timeout=10.0,          # wait up to 10s for locks instead of failing immediately
+        check_same_thread=False,  # allow multi-threaded access (Flask dev server)
+    )
     conn.row_factory = sqlite3.Row  # access columns by name: row["email"]
+
+    # Enable foreign keys and WAL for better concurrency
     conn.execute("PRAGMA foreign_keys = ON;")
+    conn.execute("PRAGMA journal_mode = WAL;")
+
     return conn
 
 

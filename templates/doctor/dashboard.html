@@ -7,8 +7,6 @@
 <p class="text-muted">Welcome, Dr. {{ doctor.name }}</p>
 
 <div class="row g-3">
-
-  <!-- Left: Upcoming appointments + inline update -->
   <div class="col-lg-7">
     <div class="card shadow-sm mb-3">
       <div class="card-body">
@@ -75,10 +73,7 @@
     </div>
   </div>
 
-  <!-- Right: availability + patient history -->
   <div class="col-lg-5">
-
-    <!-- Availability -->
     <div class="card shadow-sm mb-3">
       <div class="card-body">
         <h5 class="card-title">My Availability (Next 7 days)</h5>
@@ -123,12 +118,10 @@
       </div>
     </div>
 
-    <!-- Assigned Patients + Patient history viewer -->
     <div class="card shadow-sm">
       <div class="card-body">
         <h5 class="card-title">Patient History</h5>
 
-        <!-- Quick list of assigned patients -->
         {% if patients %}
           <p class="small text-muted mb-1">Assigned patients:</p>
           <ul class="list-group list-group-flush mb-3">
@@ -146,7 +139,6 @@
           <p class="mt-2 mb-3 text-muted">No patients assigned yet.</p>
         {% endif %}
 
-        <!-- Selected patient details + history -->
         {% if selected_patient %}
           <div class="mb-2">
             <p class="mb-1"><strong>Name:</strong> {{ selected_patient.name }}</p>
@@ -191,7 +183,6 @@
         {% endif %}
       </div>
     </div>
-
   </div>
 </div>
 {% endblock %}
